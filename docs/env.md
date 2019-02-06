@@ -41,7 +41,7 @@ For example, the command below will create a dm_control environment.
 
 This environment has an observation spec that looks like
 
-`collections.OrderedDict([('pixels', dm_control.rl.specs.ArraySpec(shape=(84, 84, 3), dtype=np.dtype('float32')))])`
+`collections.OrderedDict([('pixel', dm_control.rl.specs.ArraySpec(shape=(84, 84, 3), dtype=np.dtype('float32')))])`
 
 We reformat the above observation spec so that it satisfies the Surreal format. The observation format we use is as follows:
 
@@ -71,7 +71,7 @@ Example observation:
     },
     'low_dim': {
         'position': (numpy array),
-        'velocity': (numpy array),
+        'velocity': (numpy array)
     }
 }
 ```
