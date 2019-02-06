@@ -136,6 +136,49 @@ PPO_DEFAULT_ENV_CONFIG = Config({
 })
 PPO_DEFAULT_ENV_CONFIG.extend(BASE_ENV_CONFIG)
 
+PPO_ATARI_ENV_CONFIG = Config({
+    'env_name': '',
+    'action_repeat': 1,
+    'pixel_input': True,
+    'use_grayscale': False,
+    'use_depth': False,
+    'frame_stacks': 4,
+    'sleep_time': 0,
+    ''
+    'video': {
+        'record_video': False,
+        'save_folder': None,
+        'max_videos': 500,
+        'record_every': 5,
+    },
+    'observation': {
+        'pixel': ['camera0']
+    },
+    'eval_mode': {
+        'demonstration': None
+    },
+    'demonstration': {
+        'use_demo': False,
+        'adaptive': True,
+        # params for open loop reverse curriculum
+        'increment_frequency': 100,
+        'sample_window_width': 25,
+        'increment': 25,
+
+        # params for adaptive curriculum
+        'mixing': ['random'],
+        'mixing_ratio': [1.0],
+        'ratio_step': [0.0],
+        'improve_threshold': 0.1,
+        'curriculum_length': 50,
+        'history_length': 20,
+    },
+    'limit_episode_length': 500,
+    'stochastic_eval': True,
+})
+PPO_ATARI_ENV_CONFIG.extend(BASE_ENV_CONFIG)
+
+
 PPO_DEFAULT_SESSION_CONFIG = Config({
     'folder': '_str_',
     'tensorplex': {
@@ -211,6 +254,9 @@ class PPOLauncher(SurrealDefaultLauncher):
         args = parser.parse_args(args=argv)
 
         self.env_config.env_name = args.env
+        if 'atari' in self.env_config.env_name:
+            self.env_config = PPO_ATARI_ENV_CONFIG
+            self.env_config.env_name = args.env
         self.env_config = make_env_config(self.env_config)
 
         self.session_config.folder = args.experiment_folder
