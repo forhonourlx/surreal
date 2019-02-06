@@ -4,6 +4,8 @@ import gym
 from gym import spaces
 # import cv2
 from .atari_names import atari_name_cap
+import collections
+from .wrapper import Wrapper
 
 
 """
@@ -145,8 +147,8 @@ class ClipRewardEnv(gym.RewardWrapper):
 #         return frame[:, :, None] if self.is_pytorch else frame[None, :, :]
 
 
-class FrameStack(gym.Wrapper):
-    def __init__(self, env, k, lazy, is_pytorch=True):
+class FrameStack(Wrapper):
+    def __init__(self, env, k, lazy, is_pytorch=True, if_transpose_channel_fisrt=True, if_dict=True):
         """Stack k last frames.
 
         Returns lazy array, which is much more memory efficient.
@@ -158,26 +160,54 @@ class FrameStack(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
         self.k = k
         self.frames = deque([], maxlen=k)
+        self.if_transpose_channel_fisrt = if_transpose_channel_fisrt
         shp = env.observation_space.shape
-        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0], shp[1], shp[2] * k))
+        if self.if_transpose_channel_fisrt:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(shp[2] * k, shp[0], shp[1]))#Transpose to channel-first
+        else:
+            self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0], shp[1], shp[2] * k))
+            
         self.lazy = lazy
         self.is_pytorch = is_pytorch
+        self.if_dict = if_dict
+        self.action_spec = {
+            'type': 'discrete',
+            'dim': (env.action_space.n,)
+        }
+        self.observation_spec = collections.OrderedDict([('pixel', {'camera0':self.observation_space.shape})])
 
     def _reset(self):
         ob = self.env.reset()
+        if self.if_transpose_channel_fisrt:
+            ob = np.transpose(ob, (2,0,1))        
         for _ in range(self.k):
             self.frames.append(ob)
         info = {}
         info['frames'] = list(self.frames)
-        return self._get_ob(), info
+        if self.if_transpose_channel_fisrt:
+            ob = np.concatenate(list(self.frames),0)
+        else:
+            ob = np.concatenate(list(self.frames),2)
+        if self.if_dict:
+            ob = collections.OrderedDict([('pixel', {'camera0':ob})])  
+            
+        return ob, info #return self._get_ob(), info
 
     def _step(self, action):
         ob, reward, done, info = self.env.step(action)
+        if self.if_transpose_channel_fisrt:
+            ob = np.transpose(ob, (2,0,1))        
         self.frames.append(ob)
         # return individual observations in info dict
-        # don't forget to delete them before sending to replay!
+        # don't forget to delete them before sending to replay!        
         info['frames'] = list(self.frames)
-        return self._get_ob(), reward, done, info
+        if self.if_transpose_channel_fisrt:
+            ob = np.concatenate(list(self.frames),0)
+        else:
+            ob = np.concatenate(list(self.frames),2)
+         if self.if_dict:
+            ob = collections.OrderedDict([('pixel', {'camera0':ob})])       
+        return ob, reward, done, info #return self._get_ob(), reward, done, info
 
     def _get_ob(self):
         assert len(self.frames) == self.k
