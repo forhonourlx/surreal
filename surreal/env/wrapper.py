@@ -162,7 +162,7 @@ class MaxStepWrapper(Wrapper):
 class GymAdapter(Wrapper):
     def __init__(self, env, env_config):
         super().__init__(env)
-        assert not env_config.pixel_input, "Pixel input training not supported with OpenAI Gym"
+        #assert not env_config.pixel_input, "Pixel input training not supported with OpenAI Gym"
         assert isinstance(env, gym.Env)
         self.env = env
 
