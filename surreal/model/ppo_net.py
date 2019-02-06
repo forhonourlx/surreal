@@ -325,10 +325,11 @@ class PPOModel(nnx.Module):
                 output of critic network
         '''
         obs_list = []
-        obs_flat = self._gather_low_dim_input(obs)
-        if self.use_z_filter:
-            obs_flat = self.z_filter.forward(obs_flat)
-        obs_list.append(obs_flat)
+        if 'low_dim' in obs:
+            obs_flat = self._gather_low_dim_input(obs)
+            if self.use_z_filter:
+                obs_flat = self.z_filter.forward(obs_flat)
+            obs_list.append(obs_flat)
 
         if self.if_pixel_input:
             # right now assumes only one camera angle.
