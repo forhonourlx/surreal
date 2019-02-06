@@ -11,6 +11,7 @@ from .wrapper import (
     ObservationConcatenationWrapper,
     RobosuiteWrapper
     )
+from .atari_wrappers import FrameStack
 
 
 def make_env_config(env_config, mode=None):
@@ -56,6 +57,8 @@ def make_env(env_config, mode=None):
         env, env_config = make_robosuite(env_name, env_config)
     elif env_category == 'dm_control':
         env, env_config = make_dm_control(env_name, env_config)
+     elif env_category == 'atari':#e.g.'atari:Breakout-v4'
+        env, env_config = make_atari(env_name, env_config)           
     else:
         raise ValueError('Unknown environment category: {}'.format(env_category))
     return env, env_config
@@ -133,3 +136,12 @@ def make_dm_control(env_name, env_config):
     env_config.action_spec = env.action_spec()
     env_config.obs_spec = env.observation_spec()
     return env, env_config
+
+def make_atari(env_name, env_config):
+    import gym
+    env = gym.make(env_name)
+    env = FrameStack(env, k=env_config.frame_stacks, lazy=False, is_pytorch=True, if_transpose_channel_fisrt=True)
+    env_config.action_spec = env.action_spec #{'type': 'discrete', 'dim': (6,)}
+    env_config.obs_spec = env.observation_spec #OrderedDict([('pixel', {'camera0': (210, 160, 12)})])
+
+    return env, env_config    
